@@ -8,7 +8,7 @@ CREATE TABLE users (
     last_name VARCHAR(100), -- User's last name
     country VARCHAR(50), -- User's country
     profile_picture_url VARCHAR(255), -- URL of user's profile picture
-    wagering_multiplier INT DEFAULT 2, -- Default wagering multiplier, adjustable as needed
+    wagering_multiplier INT DEFAULT 10, -- Default wagering multiplier, adjustable as needed
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Account creation time
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Last update time
     last_login TIMESTAMP NULL, -- Last login time
