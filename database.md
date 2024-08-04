@@ -1,217 +1,186 @@
 ### 1. Users Table
 ```sql
 CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,  -- User's unique ID
-    telegram_id BIGINT NOT NULL UNIQUE,      -- User's Telegram ID
-    username VARCHAR(50),                    -- User's username
-    first_name VARCHAR(100),                 -- User's first name
-    last_name VARCHAR(100),                  -- User's last name
-    country VARCHAR(50),                     -- User's country
-    profile_picture_url VARCHAR(255),        -- URL to the user's profile picture
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Account creation time
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- Last update time
-    last_login TIMESTAMP NULL,               -- Last login time
-    status ENUM('active', 'inactive', 'banned') DEFAULT 'active',  -- Account status
-    balance DECIMAL(18, 8) DEFAULT 0.0,      -- User's balance
-    referral_code VARCHAR(50),               -- Referral code
-    referred_by INT,                         -- Referrer ID
-    FOREIGN KEY (referred_by) REFERENCES users(user_id)  -- Foreign key to referrer
+    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- User ID, using UUID as the primary key
+    telegram_id VARCHAR(50) NOT NULL UNIQUE, -- User's Telegram ID, unique
+    username VARCHAR(50), -- Username
+    first_name VARCHAR(100), -- User's first name
+    last_name VARCHAR(100), -- User's last name
+    country VARCHAR(50), -- User's country
+    profile_picture_url VARCHAR(255), -- URL of user's profile picture
+    wagering_multiplier INT DEFAULT 2, -- Default wagering multiplier, adjustable as needed
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Account creation time
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Last update time
+    last_login TIMESTAMP NULL, -- Last login time
+    last_login_ip VARCHAR(45), -- Last login IP address (supports IPv4/IPv6)
+    status ENUM('active', 'inactive', 'banned') DEFAULT 'active', -- Account status (active, inactive, banned)
+    referral_code VARCHAR(50), -- Referral code
+    referred_by UUID, -- Referrer ID (foreign key)
+    FOREIGN KEY (referred_by) REFERENCES users(user_id) -- Foreign key referencing the user ID in the users table
 );
 ```
 
-### 2. Game Categories Table
-```sql
-CREATE TABLE game_categories (
-    category_id INT AUTO_INCREMENT PRIMARY KEY,  -- Game category's unique ID
-    category_name VARCHAR(50) NOT NULL UNIQUE,   -- Game category name
-    description TEXT                             -- Game category description
-);
-```
-
-### 3. Providers Table
-```sql
-CREATE TABLE providers (
-    provider_id INT AUTO_INCREMENT PRIMARY KEY,  -- Provider's unique ID
-    provider_name VARCHAR(100) NOT NULL UNIQUE,  -- Provider name
-    api_url VARCHAR(255) NOT NULL,               -- API URL
-    description TEXT                             -- Provider description
-);
-```
-
-### 4. Games Table
-```sql
-CREATE TABLE games (
-    game_id INT AUTO_INCREMENT PRIMARY KEY,  -- Game's unique ID
-    name VARCHAR(100) NOT NULL,              -- Game name
-    description TEXT,                        -- Game description
-    category_id INT,                         -- Foreign key to game category
-    provider_id INT,                         -- Foreign key to provider
-    api_game_id VARCHAR(100) NOT NULL,       -- API game ID
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation time
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- Last update time
-    FOREIGN KEY (category_id) REFERENCES game_categories(category_id),  -- Foreign key to game category
-    FOREIGN KEY (provider_id) REFERENCES providers(provider_id)  -- Foreign key to provider
-);
-```
-
-### 5. Bets Table
-```sql
-CREATE TABLE bets (
-    bet_id INT AUTO_INCREMENT PRIMARY KEY,  -- Bet's unique ID
-    user_id INT,                            -- Foreign key to user
-    game_id INT,                            -- Foreign key to game
-    bet_amount DECIMAL(10, 2) NOT NULL,     -- Bet amount
-    payout_amount DECIMAL(10, 2),           -- Payout amount
-    api_bet_id VARCHAR(100),                -- API bet ID
-    bet_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Bet time
-    FOREIGN KEY (user_id) REFERENCES users(user_id),  -- Foreign key to user
-    FOREIGN KEY (game_id) REFERENCES games(game_id)  -- Foreign key to game
-);
-```
-
-### 6. Transactions Table
-```sql
-CREATE TABLE transactions (
-    transaction_id INT AUTO_INCREMENT PRIMARY KEY,  -- Transaction's unique ID
-    user_id INT,                                    -- Foreign key to user
-    amount DECIMAL(18, 8) NOT NULL,                 -- Transaction amount
-    transaction_type ENUM('deposit', 'withdrawal') NOT NULL,  -- Transaction type
-    transaction_status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',  -- Transaction status
-    transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Transaction time
-    wallet_id INT,                                   -- Foreign key to wallet
-    source VARCHAR(100),                             -- Transaction source
-    description TEXT,                                -- Transaction description
-    FOREIGN KEY (user_id) REFERENCES users(user_id),  -- Foreign key to user
-    FOREIGN KEY (wallet_id) REFERENCES wallets(wallet_id)  -- Foreign key to wallet
-);
-```
-
-### 7. Game Results Table
-```sql
-CREATE TABLE game_results (
-    result_id INT AUTO_INCREMENT PRIMARY KEY,  -- Game result's unique ID
-    game_id INT,                               -- Foreign key to game
-    user_id INT,                               -- Foreign key to user
-    result_details TEXT,                       -- Game result details
-    api_result_id VARCHAR(100),                -- API result ID
-    result_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Result time
-    FOREIGN KEY (game_id) REFERENCES games(game_id),  -- Foreign key to game
-    FOREIGN KEY (user_id) REFERENCES users(user_id)  -- Foreign key to user
-);
-```
-
-### 8. User Activity Logs Table
+### 2. User Activity Logs Table
 ```sql
 CREATE TABLE user_activity_logs (
-    log_id INT AUTO_INCREMENT PRIMARY KEY,  -- Activity log's unique ID
-    user_id INT,                            -- Foreign key to user
-    activity_type ENUM('login', 'logout', 'bet', 'payment', 'other') NOT NULL,  -- Activity type
-    activity_details TEXT,                  -- Activity details
-    activity_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Activity time
-    FOREIGN KEY (user_id) REFERENCES users(user_id)  -- Foreign key to user
+    log_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the activity log
+    user_id UUID, -- User ID (foreign key)
+    activity_type ENUM('login', 'logout', 'bet', 'transaction', 'other') NOT NULL, -- Type of activity
+    activity_details TEXT, -- Details of the activity
+    activity_ip VARCHAR(45), -- IP address of the activity (supports IPv4/IPv6)
+    activity_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Time of the activity
+    FOREIGN KEY (user_id) REFERENCES users(user_id) -- Foreign key referencing the user ID in the users table
+);
+```
+
+### 3. Game Categories Table
+```sql
+CREATE TABLE game_categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the game category
+    category_name VARCHAR(50) NOT NULL UNIQUE, -- Name of the game category, unique
+    description TEXT -- Description of the game category
+);
+```
+
+### 4. Providers Table
+```sql
+CREATE TABLE providers (
+    provider_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the provider
+    provider_name VARCHAR(100) NOT NULL UNIQUE, -- Name of the provider, unique
+    api_url VARCHAR(255) NOT NULL, -- API URL
+    description TEXT -- Description of the provider
+);
+```
+
+### 5. Games Table
+```sql
+CREATE TABLE games (
+    game_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the game
+    name VARCHAR(100) NOT NULL, -- Name of the game
+    description TEXT, -- Description of the game
+    category_id INT, -- Foreign key to game category
+    provider_id INT, -- Foreign key to provider
+    api_game_id VARCHAR(100) NOT NULL, -- API game ID
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Creation time
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Last update time
+    FOREIGN KEY (category_id) REFERENCES game_categories(category_id), -- Foreign key referencing the game category
+    FOREIGN KEY (provider_id) REFERENCES providers(provider_id) -- Foreign key referencing the provider
+);
+```
+
+### 6. Bets Table
+```sql
+CREATE TABLE bets (
+    bet_id INT PRIMARY KEY AUTO_INCREMENT, -- Unique ID for the bet
+    user_id UUID, -- User ID (foreign key)
+    game_id INT, -- Game ID (foreign key)
+    bet_amount DECIMAL(18, 8), -- Amount of the bet
+    currency_id INT, -- Currency ID (foreign key)
+    bet_result ENUM('win', 'lose', 'pending'), -- Result of the bet (win, lose, pending)
+    win_amount DECIMAL(18, 8) DEFAULT 0.0, -- Amount won
+    bet_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Time of the bet
+    FOREIGN KEY (user_id) REFERENCES users(user_id), -- Foreign key referencing the user ID in the users table
+    FOREIGN KEY (game_id) REFERENCES games(game_id), -- Foreign key referencing the game ID in the games table
+    FOREIGN KEY (currency_id) REFERENCES currencies(currency_id) -- Foreign key referencing the currency ID
+);
+```
+
+### 7. Transactions Table
+```sql
+CREATE TABLE transactions (
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT, -- Unique ID for the transaction
+    user_id UUID, -- User ID (foreign key)
+    currency_id INT, -- Currency ID (foreign key)
+    transaction_type ENUM('deposit', 'withdrawal'), -- Type of transaction (deposit, withdrawal)
+    amount DECIMAL(18, 8), -- Amount of the transaction
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending', -- Status of the transaction (pending, completed, failed)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Creation time
+    FOREIGN KEY (user_id) REFERENCES users(user_id), -- Foreign key referencing the user ID in the users table
+    FOREIGN KEY (currency_id) REFERENCES currencies(currency_id) -- Foreign key referencing the currency ID
+);
+```
+
+### 8. Game Results Table
+```sql
+CREATE TABLE game_results (
+    result_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the game result
+    game_id INT, -- Game ID (foreign key)
+    user_id UUID, -- User ID (foreign key)
+    result_details TEXT, -- Details of the game result
+    api_result_id VARCHAR(100), -- API result ID
+    result_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Time of the result
+    FOREIGN KEY (game_id) REFERENCES games(game_id), -- Foreign key referencing the game ID in the games table
+    FOREIGN KEY (user_id) REFERENCES users(user_id) -- Foreign key referencing the user ID in the users table
 );
 ```
 
 ### 9. Wallets Table
 ```sql
 CREATE TABLE wallets (
-    wallet_id INT AUTO_INCREMENT PRIMARY KEY,  -- Wallet's unique ID
-    user_id INT,                               -- Foreign key to user
-    currency_code VARCHAR(10) NOT NULL,        -- Cryptocurrency code
-    currency_name VARCHAR(50) NOT NULL,        -- Cryptocurrency name
-    wallet_address VARCHAR(255) NOT NULL UNIQUE,  -- Wallet address
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation time
-    FOREIGN KEY (user_id) REFERENCES users(user_id)  -- Foreign key to user
+    wallet_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Wallet ID, using UUID as the primary key
+    user_id UUID, -- User ID (foreign key)
+    currency_id INT, -- Currency ID (foreign key)
+    address VARCHAR(255) NOT NULL, -- Wallet address
+    balance DECIMAL(18, 8) DEFAULT 0.0, -- Wallet balance
+    priority INT DEFAULT 0, -- Payment priority, lower values indicate higher priority
+    FOREIGN KEY (user_id) REFERENCES users(user_id), -- Foreign key referencing the user ID in the users table
+    FOREIGN KEY (currency_id) REFERENCES currencies(currency_id) -- Foreign key referencing the currency ID
 );
 ```
 
-### 10. ICO Management Table
-```sql
-CREATE TABLE icos (
-    ico_id INT AUTO_INCREMENT PRIMARY KEY,  -- ICO's unique ID
-    ico_name VARCHAR(100) NOT NULL,         -- ICO name
-    description TEXT,                       -- ICO description
-    start_date TIMESTAMP NOT NULL,          -- ICO start date
-    end_date TIMESTAMP NOT NULL,            -- ICO end date
-    token_name VARCHAR(50) NOT NULL,        -- Token name
-    token_symbol VARCHAR(10) NOT NULL,      -- Token symbol
-    total_supply DECIMAL(18, 8) NOT NULL,   -- Total supply of tokens
-    price_per_token DECIMAL(18, 8) NOT NULL,  -- Price per token
-    soft_cap DECIMAL(18, 8) NOT NULL,       -- Soft cap
-    hard_cap DECIMAL(18, 8) NOT NULL,       -- Hard cap
-    status ENUM('active', 'completed', 'canceled') DEFAULT 'active',  -- ICO status
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation time
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP  -- Last update time
-);
-```
-
-### 11. ICO Participants Table
-```sql
-CREATE TABLE ico_participants (
-    participant_id INT AUTO_INCREMENT PRIMARY KEY,  -- Participant's unique ID
-    ico_id INT,                                     -- Foreign key to ICO
-    user_id INT,                                    -- Foreign key to user
-    amount DECIMAL(18, 8) NOT NULL,                 -- Amount invested
-    token_amount DECIMAL(18, 8) NOT NULL,           -- Amount of tokens received
-    purchase_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Purchase time
-    FOREIGN KEY (ico_id) REFERENCES icos(ico_id),   -- Foreign key to ICO
-    FOREIGN KEY (user_id) REFERENCES users(user_id)  -- Foreign key to user
-);
-```
-
-### 12. Token Sales Table
-```sql
-CREATE TABLE token_sales (
-    sale_id INT AUTO_INCREMENT PRIMARY KEY,  -- Token sale's unique ID
-    ico_id INT,                              -- Foreign key to ICO
-    sale_amount DECIMAL(18, 8) NOT NULL,     -- Sale amount
-    sale_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Sale time
-    FOREIGN KEY (ico_id) REFERENCES icos(ico_id)  -- Foreign key to ICO
-);
-```
-
-### 13. Airdrops Table
-```sql
-CREATE TABLE airdrops (
-    airdrop_id INT AUTO_INCREMENT PRIMARY KEY,  -- Airdrop's unique ID
-    airdrop_name VARCHAR(100) NOT NULL,         -- Airdrop name
-    description TEXT,                           -- Airdrop description
-    start_date TIMESTAMP NOT NULL,              -- Airdrop start date
-    end_date TIMESTAMP NOT NULL,                -- Airdrop end date
-    token_name VARCHAR(50) NOT NULL,            -- Token name
-    token_symbol VARCHAR(10) NOT NULL,          -- Token symbol
-    total_tokens DECIMAL(18, 8) NOT NULL,       -- Total tokens for airdrop
-    airdrop_type ENUM('manual', 'automatic') DEFAULT 'automatic',  -- Airdrop type
-    status ENUM('active', 'completed', 'canceled') DEFAULT 'active',  -- Airdrop status
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Creation time
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP 
-
- -- Last update time
-);
-```
-
-### 14. Airdrop Participants Table
-```sql
-CREATE TABLE airdrop_participants (
-    participant_id INT AUTO_INCREMENT PRIMARY KEY,  -- Participant's unique ID
-    airdrop_id INT,                                 -- Foreign key to airdrop
-    user_id INT,                                    -- Foreign key to user
-    token_amount DECIMAL(18, 8) NOT NULL,           -- Amount of tokens received
-    claim_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Claim time
-    FOREIGN KEY (airdrop_id) REFERENCES airdrops(airdrop_id),  -- Foreign key to airdrop
-    FOREIGN KEY (user_id) REFERENCES users(user_id)  -- Foreign key to user
-);
-```
-
-### 15. Referral Logs Table
+### 10. Referral Logs Table
 ```sql
 CREATE TABLE referral_logs (
-    referral_id INT AUTO_INCREMENT PRIMARY KEY,  -- Referral log's unique ID
-    referrer_id INT,                             -- Referrer's user ID
-    referee_id INT,                              -- Referee's user ID
-    referral_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Referral time
-    referral_type ENUM('link', 'qrcode', 'social_media', 'other') DEFAULT 'link',  -- Referral type
-    FOREIGN KEY (referrer_id) REFERENCES users(user_id),  -- Foreign key to referrer
-    FOREIGN KEY (referee_id) REFERENCES users(user_id)  -- Foreign key to referee
+    referral_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the referral log
+    referrer_id UUID, -- Referrer's user ID (foreign key)
+    referee_id UUID, -- Referee's user ID (foreign key)
+    referral_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Time of referral
+    referral_type ENUM('link', 'qrcode', 'social_media', 'other') DEFAULT 'link', -- Type of referral
+    FOREIGN KEY (referrer_id) REFERENCES users(user_id), -- Foreign key referencing the referrer ID in the users table
+    FOREIGN KEY (referee_id) REFERENCES users(user_id) -- Foreign key referencing the referee ID in the users table
 );
 ```
+
+### 11. Cashback Records Table
+```sql
+CREATE TABLE cashback_records (
+    cashback_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the cashback record
+    user_id UUID, -- User ID (foreign key)
+    amount DECIMAL(18, 8) NOT NULL, -- Cashback amount
+    cashback_type ENUM('loss', 'bet', 'win') NOT NULL, -- Type of cashback (loss-based, bet-based, win-based)
+    period_start DATE, -- Start date of the cashback calculation period
+    period_end DATE, -- End date of the cashback calculation period
+    status ENUM('pending', 'completed') DEFAULT 'pending', -- Status of the cashback record (pending, completed)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Creation time
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Last update time
+    FOREIGN KEY (user_id) REFERENCES users(user_id) -- Foreign key referencing the user ID in the users table
+);
+```
+
+### 12. Cashback Settings Table
+```sql
+CREATE TABLE cashback_settings (
+    setting_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the cashback setting
+    cashback_type ENUM('loss', 'bet', 'win') NOT NULL, -- Type of cashback (loss-based, bet-based, win-based)
+    cycle ENUM('daily', 'weekly', 'monthly') NOT NULL, -- Cashback cycle (daily, weekly, monthly)
+    percentage DECIMAL(5, 2) NOT NULL, -- Cashback percentage, e.g., 5.00 for 5%
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Creation time
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Last update time
+);
+```
+
+**Explanation**:
+- **Users Table**: Stores user information, including personal details, referral codes, and statuses. It also tracks the referral relationship between users.
+- **User Activity Logs Table**: Keeps records of user activities like logins, bets, and transactions for audit and tracking purposes.
+- **Game Categories Table**: Defines different categories of games.
+- **Providers Table**: Contains information about game providers and their API URLs.
+- **Games
+
+ Table**: Stores information about individual games, including their categories and providers.
+- **Bets Table**: Logs betting activities, including the amounts bet and the results.
+- **Transactions Table**: Tracks financial transactions such as deposits and withdrawals.
+- **Game Results Table**: Records the outcomes of games.
+- **Wallets Table**: Manages user wallets, including balance and priority for payments.
+- **Referral Logs Table**: Records referral activities, capturing who referred whom and the method of referral.
+- **Cashback Records Table**: Keeps track of cashback transactions, including the type and status.
+- **Cashback Settings Table**: Defines cashback settings, including type, cycle, and percentage.
