@@ -169,14 +169,25 @@ CREATE TABLE cashback_settings (
 );
 ```
 
+### 13.Currencies Table
+```sql
+CREATE TABLE currencies (
+    currency_id INT AUTO_INCREMENT PRIMARY KEY, -- Unique ID for the currency
+    currency_name VARCHAR(50) NOT NULL, -- Name of the currency
+    symbol VARCHAR(10) NOT NULL, -- Symbol of the currency (e.g., USD, BTC)
+    type ENUM('ERC20', 'TRC20', 'BTC', 'BSC', 'Other') NOT NULL, -- Type of the currency (e.g., ERC20 token, TRC20 token, Bitcoin, Binance Smart Chain, Other)
+    contract_address VARCHAR(255), -- Contract address for tokens (e.g., ERC20, TRC20)
+    decimal_places INT NOT NULL, -- Number of decimal places for the currency
+    icon_url VARCHAR(255) -- URL of the currency's icon
+);
+```
+
 **Explanation**:
 - **Users Table**: Stores user information, including personal details, referral codes, and statuses. It also tracks the referral relationship between users.
 - **User Activity Logs Table**: Keeps records of user activities like logins, bets, and transactions for audit and tracking purposes.
 - **Game Categories Table**: Defines different categories of games.
 - **Providers Table**: Contains information about game providers and their API URLs.
-- **Games
-
- Table**: Stores information about individual games, including their categories and providers.
+- **Games Table**: Stores information about individual games, including their categories and providers.
 - **Bets Table**: Logs betting activities, including the amounts bet and the results.
 - **Transactions Table**: Tracks financial transactions such as deposits and withdrawals.
 - **Game Results Table**: Records the outcomes of games.
@@ -184,3 +195,4 @@ CREATE TABLE cashback_settings (
 - **Referral Logs Table**: Records referral activities, capturing who referred whom and the method of referral.
 - **Cashback Records Table**: Keeps track of cashback transactions, including the type and status.
 - **Cashback Settings Table**: Defines cashback settings, including type, cycle, and percentage.
+- **Currencies Table**:Stores information about different currencies, including their names, symbols, types, and contract addresses.
