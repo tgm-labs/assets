@@ -1,0 +1,13 @@
+{
+    "email": "tgm.bet@outlook.com",
+    "domains": [
+        {
+            "domain": "tgm.bet",
+            "ports": [
+                {
+                    "80": "8080"
+                }
+            ]
+        }
+    ]
+}
